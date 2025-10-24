@@ -8,7 +8,7 @@ import { useRecording } from "./hooks/useRecording";
 import { useTextProcessing } from "./hooks/useTextProcessing";
 import { useModelStatus } from "./hooks/useModelStatus";
 import { usePermissions } from "./hooks/usePermissions";
-import { Mic, MicOff, Settings, History, Copy, Download } from "lucide-react";
+import { Mic, MicOff, Settings, History, Copy, Download, X, Minus } from "lucide-react";
 import SettingsPanel from "./components/SettingsPanel";
 import { ModelDownloadProgress } from "./components/ui/model-status-indicator";
 
@@ -644,6 +644,18 @@ export default function App() {
             蛐蛐
           </h1>
           <div className="flex items-center space-x-3 non-draggable">
+            <Tooltip content="最小化" position="bottom">
+              <button
+                onClick={() => {
+                  if (window.electronAPI) {
+                    window.electronAPI.minimizeWindow();
+                  }
+                }}
+                className="p-3 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors shadow-sm"
+              >
+                <Minus className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              </button>
+            </Tooltip>
             <Tooltip content="历史记录" position="bottom">
               <button
                 onClick={handleOpenHistory}
@@ -658,6 +670,14 @@ export default function App() {
                 className="p-3 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors shadow-sm"
               >
                 <Settings className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              </button>
+            </Tooltip>
+            <Tooltip content="关闭" position="bottom">
+              <button
+                onClick={handleClose}
+                className="p-3 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-colors shadow-sm"
+              >
+                <X className="w-6 h-6 text-red-600 dark:text-red-400" />
               </button>
             </Tooltip>
           </div>

@@ -114,8 +114,8 @@ logger.info('设置用户数据目录环境变量', {
 
 // 初始化管理器
 const environmentManager = new EnvironmentManager();
-const windowManager = new WindowManager();
 const databaseManager = new DatabaseManager();
+const windowManager = new WindowManager(databaseManager);
 const clipboardManager = new ClipboardManager(logger); // 传递logger实例
 const funasrManager = new FunASRManager(logger); // 传递logger实例
 const trayManager = new TrayManager();
@@ -179,6 +179,9 @@ async function startApp() {
   try {
     logger.info('创建主窗口...');
     await windowManager.createMainWindow();
+    // 更新窗口任务栏可见性和置顶状态
+    windowManager.updateMainWindowTaskbarVisibility();
+    windowManager.updateMainWindowAlwaysOnTop();
     logger.info('主窗口创建成功');
   } catch (error) {
     logger.error("创建主窗口时出错:", error);
@@ -214,7 +217,11 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
+  // 检查是否启用了最小化到托盘的设置
+  const minimizeOnClose = databaseManager.getSetting("minimize_on_close", false);
+  
+  // 如果没有启用最小化到托盘，或者是在macOS上，则正常退出
+  if (!minimizeOnClose || process.platform !== "darwin") {
     app.quit();
   }
 });

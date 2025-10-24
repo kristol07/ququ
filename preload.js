@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   showWindow: () => ipcRenderer.invoke("show-window"),
   minimizeWindow: () => ipcRenderer.invoke("minimize-window"),
   closeWindow: () => ipcRenderer.invoke("close-window"),
+  updateWindowTaskbarVisibility: () => ipcRenderer.invoke("update-window-taskbar-visibility"),
+  updateWindowAlwaysOnTop: () => ipcRenderer.invoke("update-window-always-on-top"),
 
   // 录音相关
   startRecording: () => ipcRenderer.invoke("start-recording"),

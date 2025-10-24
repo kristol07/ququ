@@ -2,11 +2,12 @@ const { BrowserWindow } = require("electron");
 const path = require("path");
 
 class WindowManager {
-  constructor() {
+  constructor(databaseManager = null) {
     this.mainWindow = null;
     this.controlPanelWindow = null;
     this.historyWindow = null;
     this.settingsWindow = null;
+    this.databaseManager = databaseManager;
   }
 
   async createMainWindow() {
@@ -20,9 +21,9 @@ class WindowManager {
       height: 500,
       frame: false,
       transparent: true,
-      alwaysOnTop: true,
+      alwaysOnTop: false,
       resizable: false,
-      skipTaskbar: true,
+      skipTaskbar: true, // 默认不在任务栏显示，符合应用设计
       movable: true,
       webPreferences: {
         nodeIntegration: false,
@@ -41,6 +42,19 @@ class WindowManager {
 
     this.mainWindow.on("closed", () => {
       this.mainWindow = null;
+    });
+
+    // 处理窗口关闭事件
+    this.mainWindow.on("close", (event) => {
+      // 检查是否启用了最小化到托盘的设置
+      if (this.databaseManager) {
+        const minimizeOnClose = this.databaseManager.getSetting("minimize_on_close", false);
+        
+        if (minimizeOnClose) {
+          event.preventDefault();
+          this.mainWindow.minimize();
+        }
+      }
     });
 
     return this.mainWindow;
@@ -92,7 +106,7 @@ class WindowManager {
       height: 700,
       show: false,
       title: "转录历史 - 蛐蛐",
-      alwaysOnTop: true,
+      alwaysOnTop: false,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -128,7 +142,7 @@ class WindowManager {
       height: 600,
       show: false,
       title: "设置 - 蛐蛐",
-      alwaysOnTop: true,
+      alwaysOnTop: false,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -219,6 +233,20 @@ class WindowManager {
   closeSettingsWindow() {
     if (this.settingsWindow) {
       this.settingsWindow.close();
+    }
+  }
+
+  updateMainWindowTaskbarVisibility() {
+    if (this.mainWindow && this.databaseManager) {
+      const minimizeOnClose = this.databaseManager.getSetting("minimize_on_close", false);
+      this.mainWindow.setSkipTaskbar(minimizeOnClose);
+    }
+  }
+
+  updateMainWindowAlwaysOnTop() {
+    if (this.mainWindow && this.databaseManager) {
+      const alwaysOnTop = this.databaseManager.getSetting("always_on_top", false);
+      this.mainWindow.setAlwaysOnTop(alwaysOnTop);
     }
   }
 

@@ -11,7 +11,9 @@ const SettingsPage = () => {
     ai_api_key: "",
     ai_base_url: "https://api.openai.com/v1",
     ai_model: "gpt-3.5-turbo",
-    enable_ai_optimization: true
+    enable_ai_optimization: true,
+    minimize_on_close: false,
+    always_on_top: true
   });
   
   const [customModel, setCustomModel] = useState(false);
@@ -51,7 +53,9 @@ const SettingsPage = () => {
           ai_api_key: allSettings.ai_api_key || "",
           ai_base_url: allSettings.ai_base_url || "https://api.openai.com/v1",
           ai_model: allSettings.ai_model || "gpt-3.5-turbo",
-          enable_ai_optimization: allSettings.enable_ai_optimization !== false // 默认为true
+          enable_ai_optimization: allSettings.enable_ai_optimization !== false, // 默认为true
+          minimize_on_close: allSettings.minimize_on_close === true, // 默认为false
+          always_on_top: allSettings.always_on_top !== false // 默认为true
         };
         setSettings(prev => ({ ...prev, ...loadedSettings }));
         
@@ -77,6 +81,16 @@ const SettingsPage = () => {
         await window.electronAPI.setSetting('ai_base_url', settings.ai_base_url);
         await window.electronAPI.setSetting('ai_model', settings.ai_model);
         await window.electronAPI.setSetting('enable_ai_optimization', settings.enable_ai_optimization);
+        await window.electronAPI.setSetting('minimize_on_close', settings.minimize_on_close);
+        await window.electronAPI.setSetting('always_on_top', settings.always_on_top);
+        
+        // 通知主窗口更新任务栏可见性和置顶状态
+        if (window.electronAPI.updateWindowTaskbarVisibility) {
+          await window.electronAPI.updateWindowTaskbarVisibility();
+        }
+        if (window.electronAPI.updateWindowAlwaysOnTop) {
+          await window.electronAPI.updateWindowAlwaysOnTop();
+        }
         
         toast.success("设置保存成功");
       }
@@ -241,6 +255,76 @@ const SettingsPage = () => {
                   onRequest={testAccessibilityPermission}
                   buttonText="测试权限"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* 窗口行为部分 */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
+            <div className="p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 chinese-title">
+                  窗口行为
+                </h2>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  自定义应用窗口的行为和操作方式。
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label htmlFor="minimize-on-close-toggle" className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      关闭时最小化到托盘
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      点击关闭按钮时最小化窗口而不是完全关闭应用
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={settings.minimize_on_close}
+                    onClick={() => handleInputChange('minimize_on_close', !settings.minimize_on_close)}
+                    className={`${
+                      settings.minimize_on_close ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+                    } relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`${
+                        settings.minimize_on_close ? 'translate-x-4' : 'translate-x-0'
+                      } inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                    />
+                  </button>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label htmlFor="always-on-top-toggle" className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      窗口始终置顶
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      保持主窗口在其他应用窗口之上显示
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={settings.always_on_top}
+                    onClick={() => handleInputChange('always_on_top', !settings.always_on_top)}
+                    className={`${
+                      settings.always_on_top ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+                    } relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`${
+                        settings.always_on_top ? 'translate-x-4' : 'translate-x-0'
+                      } inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

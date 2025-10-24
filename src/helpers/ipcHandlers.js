@@ -306,6 +306,22 @@ class IPCHandlers {
       require("electron").app.quit();
     });
 
+    ipcMain.handle("update-window-taskbar-visibility", () => {
+      if (this.windowManager) {
+        this.windowManager.updateMainWindowTaskbarVisibility();
+        return { success: true };
+      }
+      return { success: false, error: "窗口管理器未初始化" };
+    });
+
+    ipcMain.handle("update-window-always-on-top", () => {
+      if (this.windowManager) {
+        this.windowManager.updateMainWindowAlwaysOnTop();
+        return { success: true };
+      }
+      return { success: false, error: "窗口管理器未初始化" };
+    });
+
     // 热键管理 - 添加发送者跟踪机制
     this.hotkeyRegisteredSenders = new Set(); // 跟踪已注册热键的发送者
     
