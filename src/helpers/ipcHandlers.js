@@ -396,6 +396,55 @@ class IPCHandlers {
       }
     });
 
+    // 快捷键设置管理
+    ipcMain.handle("set-custom-hotkey", (event, hotkey) => {
+      try {
+        if (this.hotkeyManager) {
+          // 先注销当前热键
+          const currentHotkeys = this.hotkeyManager.getRegisteredHotkeys();
+          const mainHotkey = currentHotkeys.find(key => key !== 'F2');
+          if (mainHotkey) {
+            this.hotkeyManager.unregisterHotkey(mainHotkey);
+          }
+          
+          // 注册新热键
+          const success = this.hotkeyManager.registerHotkey(hotkey, () => {
+            this.logger.info(`自定义热键 ${hotkey} 被触发，发送事件到主窗口`);
+            if (this.windowManager && this.windowManager.mainWindow && !this.windowManager.mainWindow.isDestroyed()) {
+              this.windowManager.mainWindow.webContents.send("hotkey-triggered", { hotkey });
+            }
+          });
+          
+          if (success) {
+            // 保存到数据库
+            this.databaseManager.setSetting('hotkey', hotkey);
+            this.logger.info(`自定义热键 ${hotkey} 设置成功`);
+          } else {
+            this.logger.error(`自定义热键 ${hotkey} 设置失败`);
+          }
+          
+          return { success };
+        }
+        return { success: false, error: "热键管理器未初始化" };
+      } catch (error) {
+        this.logger.error("设置自定义热键失败:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    ipcMain.handle("get-custom-hotkey", () => {
+      try {
+        if (this.databaseManager) {
+          const hotkey = this.databaseManager.getSetting('hotkey', "CommandOrControl+Shift+Space");
+          return { success: true, hotkey };
+        }
+        return { success: false, error: "数据库管理器未初始化" };
+      } catch (error) {
+        this.logger.error("获取自定义热键失败:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
     // F2热键管理
     ipcMain.handle("register-f2-hotkey", (event) => {
       try {

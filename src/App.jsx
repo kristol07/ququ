@@ -440,7 +440,7 @@ export default function App() {
   }, [modelStatus, isRecording, isRecordingProcessing, startRecording, stopRecording]);
 
   // 使用热键Hook，不再使用F2双击功能
-  const { hotkey, syncRecordingState, registerHotkey } = useHotkey();
+  const { hotkey, syncRecordingState, registerHotkey, setCustomHotkey } = useHotkey();
 
   // 注册传统热键监听 - 只在主窗口注册，避免重复
   useEffect(() => {
@@ -456,22 +456,38 @@ export default function App() {
 
     const initializeHotkey = async () => {
       try {
-        // 注册默认热键 CommandOrControl+Shift+Space
-        const success = await registerHotkey('CommandOrControl+Shift+Space');
-        if (success) {
-          console.log('主窗口热键注册成功');
-        } else {
-          console.error('主窗口热键注册失败');
+        // 优先尝试从设置中获取自定义热键
+        if (window.electronAPI) {
+          const customHotkeyResult = await window.electronAPI.getCustomHotkey();
+          if (customHotkeyResult.success && customHotkeyResult.hotkey) {
+            // 注册自定义热键
+            const success = await setCustomHotkey(customHotkeyResult.hotkey);
+            if (success) {
+              console.log('自定义热键注册成功:', customHotkeyResult.hotkey);
+            } else {
+              console.error('自定义热键注册失败，使用默认热键');
+              // 如果自定义热键注册失败，使用默认热键
+              await registerHotkey('CommandOrControl+Shift+Space');
+            }
+          } else {
+            // 如果没有自定义热键，使用默认热键
+            const success = await registerHotkey('CommandOrControl+Shift+Space');
+            if (success) {
+              console.log('默认热键注册成功');
+            } else {
+              console.error('默认热键注册失败');
+            }
+          }
         }
       } catch (error) {
-        console.error('主窗口热键注册异常:', error);
+        console.error('热键注册异常:', error);
       }
     };
 
-    if (registerHotkey) {
+    if (registerHotkey && setCustomHotkey) {
       initializeHotkey();
     }
-  }, [registerHotkey]);
+  }, [registerHotkey, setCustomHotkey]);
 
   // 处理关闭窗口
   const handleClose = () => {

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import { toast, Toaster } from "sonner";
-import { Settings, Save, Eye, EyeOff, X, Loader2, TestTube, CheckCircle, XCircle, Mic, Shield } from "lucide-react";
+import { Settings, Save, Eye, EyeOff, X, Loader2, TestTube, CheckCircle, XCircle, Mic, Shield, RotateCcw } from "lucide-react";
 import { usePermissions } from "./hooks/usePermissions";
 import PermissionCard from "./components/ui/permission-card";
+import HotkeyInput from "./components/ui/hotkey-input";
 
 const SettingsPage = () => {
   const [settings, setSettings] = useState({
@@ -13,7 +14,8 @@ const SettingsPage = () => {
     ai_model: "gpt-3.5-turbo",
     enable_ai_optimization: true,
     minimize_on_close: false,
-    always_on_top: true
+    always_on_top: true,
+    hotkey: "CommandOrControl+Shift+Space"
   });
   
   const [customModel, setCustomModel] = useState(false);
@@ -55,7 +57,8 @@ const SettingsPage = () => {
           ai_model: allSettings.ai_model || "gpt-3.5-turbo",
           enable_ai_optimization: allSettings.enable_ai_optimization !== false, // 默认为true
           minimize_on_close: allSettings.minimize_on_close === true, // 默认为false
-          always_on_top: allSettings.always_on_top !== false // 默认为true
+          always_on_top: allSettings.always_on_top !== false, // 默认为true
+          hotkey: allSettings.hotkey || "CommandOrControl+Shift+Space" // 默认快捷键
         };
         setSettings(prev => ({ ...prev, ...loadedSettings }));
         
@@ -83,6 +86,18 @@ const SettingsPage = () => {
         await window.electronAPI.setSetting('enable_ai_optimization', settings.enable_ai_optimization);
         await window.electronAPI.setSetting('minimize_on_close', settings.minimize_on_close);
         await window.electronAPI.setSetting('always_on_top', settings.always_on_top);
+        await window.electronAPI.setSetting('hotkey', settings.hotkey);
+        
+        // 更新快捷键
+        if (window.electronAPI.setCustomHotkey) {
+          const hotkeyResult = await window.electronAPI.setCustomHotkey(settings.hotkey);
+          if (hotkeyResult.success) {
+            console.log('快捷键更新成功:', settings.hotkey);
+          } else {
+            console.error('快捷键更新失败:', hotkeyResult.error);
+            toast.error('快捷键更新失败: ' + (hotkeyResult.error || '未知错误'));
+          }
+        }
         
         // 通知主窗口更新任务栏可见性和置顶状态
         if (window.electronAPI.updateWindowTaskbarVisibility) {
@@ -130,6 +145,41 @@ const SettingsPage = () => {
     }));
     setCustomModel(false);
     toast.info("已重置为OpenAI配置");
+  };
+
+  // 重置快捷键为默认值
+  const resetHotkeyToDefault = () => {
+    setSettings(prev => ({
+      ...prev,
+      hotkey: "CommandOrControl+Shift+Space"
+    }));
+    toast.info("已重置为默认快捷键");
+  };
+
+  // 验证快捷键是否有效
+  const validateHotkey = (hotkey) => {
+    if (!hotkey) return false;
+    
+    // 基本验证：必须包含修饰键
+    const modifiers = ['CommandOrControl', 'Shift', 'Alt'];
+    const hasModifier = modifiers.some(mod => hotkey.includes(mod));
+    
+    if (!hasModifier) {
+      toast.error("快捷键必须包含至少一个修饰键（Ctrl/Cmd, Shift, Alt）");
+      return false;
+    }
+    
+    return true;
+  };
+
+  // 处理快捷键变化
+  const handleHotkeyChange = (newHotkey) => {
+    if (validateHotkey(newHotkey)) {
+      setSettings(prev => ({
+        ...prev,
+        hotkey: newHotkey
+      }));
+    }
   };
 
   // 测试AI配置
@@ -328,8 +378,49 @@ const SettingsPage = () => {
               </div>
             </div>
           </div>
-
-          {/* AI配置部分 */}
+    
+              {/* 快捷键配置部分 */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
+                <div className="p-6">
+                  <div className="mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 chinese-title">
+                      快捷键配置
+                    </h2>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      自定义语音录音的快捷键组合。
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                          录音快捷键
+                        </label>
+                        <button
+                          type="button"
+                          onClick={resetHotkeyToDefault}
+                          className="text-xs px-2 py-1 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center space-x-1"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>重置默认</span>
+                        </button>
+                      </div>
+                      <HotkeyInput
+                        value={settings.hotkey}
+                        onChange={handleHotkeyChange}
+                        placeholder="按下快捷键组合"
+                        className="w-full"
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        当前快捷键: {settings.hotkey.replace('CommandOrControl', navigator.platform.includes('Mac') ? '⌘' : 'Ctrl').replace('Shift', '⇧').replace('Alt', '⌥').replace('Space', '空格').replace(/\+/g, ' + ')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+    
+              {/* AI配置部分 */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="p-6">
               <div className="mb-4">

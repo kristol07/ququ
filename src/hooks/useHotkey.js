@@ -14,9 +14,16 @@ export const useHotkey = () => {
     const getCurrentHotkey = async () => {
       try {
         if (window.electronAPI) {
-          const currentHotkey = await window.electronAPI.getCurrentHotkey();
-          if (currentHotkey) {
-            setHotkey(currentHotkey);
+          // 优先获取自定义热键
+          const customHotkeyResult = await window.electronAPI.getCustomHotkey();
+          if (customHotkeyResult.success && customHotkeyResult.hotkey) {
+            setHotkey(customHotkeyResult.hotkey);
+          } else {
+            // 如果没有自定义热键，获取默认热键
+            const currentHotkey = await window.electronAPI.getCurrentHotkey();
+            if (currentHotkey) {
+              setHotkey(currentHotkey);
+            }
           }
         }
       } catch (error) {
@@ -53,6 +60,27 @@ export const useHotkey = () => {
     } catch (error) {
       if (window.electronAPI && window.electronAPI.log) {
         window.electronAPI.log('error', '注册热键失败:', error);
+      }
+      return false;
+    }
+  };
+
+  // 设置自定义热键
+  const setCustomHotkey = async (newHotkey) => {
+    try {
+      if (window.electronAPI) {
+        const result = await window.electronAPI.setCustomHotkey(newHotkey);
+        if (result.success) {
+          registeredHotkeyRef.current = newHotkey;
+          setHotkey(newHotkey);
+          setIsRegistered(true);
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      if (window.electronAPI && window.electronAPI.log) {
+        window.electronAPI.log('error', '设置自定义热键失败:', error);
       }
       return false;
     }
@@ -104,6 +132,7 @@ export const useHotkey = () => {
     isRegistered,
     registerHotkey,
     unregisterHotkey,
+    setCustomHotkey,
     syncRecordingState
   };
 };

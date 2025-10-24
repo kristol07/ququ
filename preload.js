@@ -61,6 +61,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   registerHotkey: (hotkey) => ipcRenderer.invoke("register-hotkey", hotkey),
   unregisterHotkey: (hotkey) => ipcRenderer.invoke("unregister-hotkey", hotkey),
   getCurrentHotkey: () => ipcRenderer.invoke("get-current-hotkey"),
+  setCustomHotkey: (hotkey) => ipcRenderer.invoke("set-custom-hotkey", hotkey),
+  getCustomHotkey: () => ipcRenderer.invoke("get-custom-hotkey"),
   
   // F2热键管理
   registerF2Hotkey: () => ipcRenderer.invoke("register-f2-hotkey"),
